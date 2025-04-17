@@ -3,7 +3,7 @@ name: Deploy Flask App on GitHub Actions
 on:
   push:
     branches:
-      - main  # Trigger when code is pushed to the main branch
+      - master # Trigger when code is pushed to the main branch
 
 jobs:
   build:
