@@ -1,7 +1,5 @@
 name: Deploy Flask App on GitHub Actions
 
-name: Run Flask Backend
-
 on:
   push:
     branches:
