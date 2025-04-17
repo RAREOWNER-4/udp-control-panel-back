@@ -1,56 +1,31 @@
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+from flask import Flask, request, jsonify
 import subprocess
-import os
-import signal
 
-app = Flask(__name__, static_folder='static')
-CORS(app)
-active_attacks = {}
+app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return send_from_directory('static', 'index.html')
-
-@app.route('/<path:path>')
-def static_files(path):
-    return send_from_directory('static', path)
+    return "Welcome to UDP Flood Control API!"
 
 @app.route('/start', methods=['GET'])
 def start_attack():
-    try:
-        ip = request.args.get('ip')
-        port = request.args.get('port')
-        time = request.args.get('time')
-        threads = request.args.get('threads')
-        apikey = request.args.get('apikey')
+    ip = request.args.get('ip')
+    port = request.args.get('port')
+    time = request.args.get('time')
+    threads = request.args.get('threads')
+    api_key = request.args.get('apikey')
 
-        if not all([ip, port, time, threads, apikey]):
-            raise ValueError("Missing parameters")
+    if api_key != 'valid-api-key':
+        return jsonify({'error': 'Invalid API Key'}), 403
 
-        command = ['./rare', ip, port, time, threads, apikey]
-        process = subprocess.Popen(command)
-        attack_id = str(process.pid)
-        active_attacks[attack_id] = process
-
-        return jsonify({'status': 'started', 'attack_id': attack_id})
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    attack_id = subprocess.run(['python', 'start_attack.py', ip, port, time, threads], capture_output=True, text=True).stdout.strip()
+    return jsonify({'attack_id': attack_id})
 
 @app.route('/stop', methods=['GET'])
 def stop_attack():
-    try:
-        attack_id = request.args.get('attack_id')
-        if attack_id not in active_attacks:
-            raise ValueError("Invalid attack ID")
+    attack_id = request.args.get('attack_id')
+    # Logic to stop the attack goes here.
+    return jsonify({'status': f'Stopped attack with ID {attack_id}'})
 
-        os.kill(active_attacks[attack_id].pid, signal.SIGTERM)
-        del active_attacks[attack_id]
-
-        return jsonify({'status': f'Stopped attack {attack_id}'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
